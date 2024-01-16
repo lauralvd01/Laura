@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import subprocess
 from PIL import ImageTk, Image
-from threading import Thread,Event
+# from threading import Thread,Event
 
 from math import ceil
 from functools import partial
@@ -14,20 +14,20 @@ import DeleteRender
 import Config
 import PopUP
 
-class Controller(object) :
-    def __init__(self,nbThreads) -> None:
-        self.nbThreads = nbThreads
-        self.threads = [None for i in range(nbThreads)]
-        self.stop = Event()
-        print(self.threads)
+# class Controller(object) :
+#     def __init__(self,nbThreads) -> None:
+#         self.nbThreads = nbThreads
+#         self.threads = [None for i in range(nbThreads)]
+#         self.stop = Event()
+#         print(self.threads)
 
-import sys
-cmd = [sys.executable or "python", "-u", "-c", """
-import itertools, time
-for i in itertools.count():
-    print(i)
-    time.sleep(0.5)
-"""]
+# import sys
+# cmd = [sys.executable or "python", "-u", "-c", """
+# import itertools, time
+# for i in itertools.count():
+#     print(i)
+#     time.sleep(0.5)
+# """]
 
 
 
@@ -62,28 +62,28 @@ class App(tk.Tk) :
         return renders
     
     def ping(self,ip) :
-        print("ping "+ip)
+        # print("ping "+ip)
         try :
             batch = subprocess.check_output('ping '+ip)
             lines = batch.split(b"\n")
-            print(lines[2])
+            # print(lines[2])
             index = lines[2].find(b"attente")
             
             if index < 0 :
-                print("Connected")
+                # print("Connected")
                 return True
             else :
-                print("Not connected")
+                # print("Not connected")
                 return False
         except :
-            print("ping impossible pour "+ip)
+            pass
+            # print("ping impossible pour "+ip)
         return False
     
     def getStatus(self) :
         for i in range(len(self.renders)) :
             status = self.ping(self.renders.loc[i,'Ipv4'])
             self.renders.loc[i,'ON'] = status
-        print(self.renders)
         return
     
     def displayRenders(self) :
@@ -364,41 +364,58 @@ class App(tk.Tk) :
         return
     
     def stopOperations(self) :
-        if self.running :
-            self.running = False
-            print("STOP")
-        else :
-            PopUP.PopUP("Erreur","Aucune opération en cours.")
+        # if self.running :
+        #     self.running = False
+        #     print("STOP")
+        # else :
+        #     PopUP.PopUP("Erreur","Aucune opération en cours.")
         return
     
-    def runProcess(self,renderName,command) :
-        command = cmd
+    def runProcessO(self,renderName,command) :
+    #     command = cmd
         
+    #     index = self.renders.index[self.renders['RenderName'] == renderName]
+    #     if self.renders.loc[index[0],'ON'] :
+    #         try :
+    #             error = ""
+    #             batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                
+    #             while batch.poll() == None :
+    #                 print("Trying "+command+" ...")
+    #                 if not self.running :
+    #                     batch.terminate()
+    #                     print("Stop "+command)
+    #                     PopUP.PopUP("Arrêt de l'opération",command+" : processus arrêté avec succès.")
+                
+    #             # if self.running :
+    #             if True :
+    #                 result = batch.stdout.readlines()
+    #                 if result == []:
+    #                     error = joinList(batch.stderr.readlines())
+    #                     PopUP.PopUP("Erreur "+renderName,"ERREUR : " + error,"#FF0000")
+    #                 else :
+    #                     PopUP.PopUP("Succès",renderName + " :\n" + joinList(result))
+    #             else :
+    #                 PopUP.PopUP("Arrêt des opérations","Arrêt de l'opération sur le "+renderName)
+    #         except :
+    #             PopUP.PopUP("Erreur "+renderName,"Une erreur s'est produite lors de l'envoi de la commande","#FF0000")
+    #     else :
+    #         PopUP.PopUP("Erreur "+renderName,"Le render "+renderName+" est considéré éteint. Allumer le render puis actualiser les statuts.","#FF0000")
+        return
+        
+    def runProcess(self,renderName,command) :
         index = self.renders.index[self.renders['RenderName'] == renderName]
         if self.renders.loc[index[0],'ON'] :
             try :
-                error = ""
                 batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                
-                while batch.poll() == None :
-                    print("Trying "+command+" ...")
-                    if not self.running :
-                        batch.terminate()
-                        print("Stop "+command)
-                        PopUP.PopUP("Arrêt de l'opération",command+" : processus arrêté avec succès.")
-                
-                # if self.running :
-                if True :
-                    result = batch.stdout.readlines()
-                    if result == []:
-                        error = joinList(batch.stderr.readlines())
-                        PopUP.PopUP("Erreur "+renderName,"ERREUR : " + error,"#FF0000")
-                    else :
-                        PopUP.PopUP("Succès",renderName + " :\n" + joinList(result))
+                result = batch.stdout.readlines()
+                if result == []:
+                    error = joinList(batch.stderr.readlines())
+                    PopUP.PopUP("Erreur "+self.render['RenderName'],"ERREUR : " + error,"#FF0000")
                 else :
-                    PopUP.PopUP("Arrêt des opérations","Arrêt de l'opération sur le "+renderName)
+                    PopUP.PopUP("Succès",self.render['RenderName'] + " :\n" + joinList(result))
             except :
-                PopUP.PopUP("Erreur "+renderName,"Une erreur s'est produite lors de l'envoi de la commande","#FF0000")
+                PopUP.PopUP("Erreur "+self.render['RenderName'],self.render['RenderName']+" mal configuré !","#FF0000")
         else :
             PopUP.PopUP("Erreur "+renderName,"Le render "+renderName+" est considéré éteint. Allumer le render puis actualiser les statuts.","#FF0000")
         return
@@ -547,9 +564,9 @@ class App(tk.Tk) :
             self.destroy()
         
         
-        # quit button
-        stop_button = ttk.Button(self, text="Annuler les opérations", command=self.stopOperations)
-        stop_button.grid(column=1, columnspan=2, row=5, sticky=tk.EW)
+        # # stop button
+        # stop_button = ttk.Button(self, text="Annuler les opérations", command=self.stopOperations)
+        # stop_button.grid(column=1, columnspan=2, row=5, sticky=tk.EW)
         
         # quit button
         quit_button = ttk.Button(self, text="Quitter", command=quit)

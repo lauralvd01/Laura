@@ -5,7 +5,7 @@ a = Analysis(
     ['App.py', 'Config.py', 'DeleteRender.py', 'NewRender.py', 'PopUP.py'],
     pathex=[],
     binaries=[],
-    datas=[('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\arret_par_cle.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\connexion_par_cle.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\GENERATION_CLES.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\restart_par_cle.bat', '.\\Files\\')],
+    datas=[('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\arret_par_cle.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\connexion_par_cle.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\GENERATION_CLES.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\restart_par_cle.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\GENERATION_CLES.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\green.png', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\GENERATION_CLES.bat', '.\\Files\\'), ('D:\\LEVRAUDLaura\\Seb\\_internal\\Files\\red.png', '.\\Files\\')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
