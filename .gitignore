@@ -1,0 +1,11 @@
+/build
+/dist
+/Essais
+/Fermeture de Backburner - Restart.cmd
+/Fermeture de Backburner et Arrêt de l'ordinateur.cmd
+/normal
+/normalzip.zip
+/test_arret_par_cle.bat
+/test_connexion_par_cle.bat
+/test_ping_192.168.0.50.txt
+/test_restart_par_cle.bat
