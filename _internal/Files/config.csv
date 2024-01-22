@@ -1,5 +1,5 @@
-RenderName,Username,Ipv4,Config,Selected
-Render 1,backburner,192.168.0.50,0,0
-Render 12,backburner,192.168.0.50,0,0
-Render 45,backburner,render-45,0,0
-Render 46,backburner,render-46,0,0
+RenderName,Username,Ipv4,Config
+Render 1,backburner,192.168.0.50,0
+Render 12,backburner,192.168.0.50,0
+Render 45,backburner,render-45,0
+Render 46,backburner,render-46,0

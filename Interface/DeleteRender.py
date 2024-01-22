@@ -125,7 +125,7 @@ class DeleteRender(tk.Toplevel):
         self.SAVEPATH = savepath
         self.SAVEFILE = savefile
 
-        self.geometry('600x400')
+        self.geometry('700x800')
         self.resizable(1, 1)
         self.title('Supprimer des Renders')
 

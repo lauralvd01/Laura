@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import subprocess
 from PIL import ImageTk, Image
+from tkinter import filedialog
 # from threading import Thread,Event
 
 from math import ceil
@@ -67,9 +68,9 @@ class App(tk.Tk) :
             batch = subprocess.check_output('ping '+ip)
             lines = batch.split(b"\n")
             # print(lines[2])
-            index = lines[2].find(b"attente")
+            index = lines[2].find(b"octets")
             
-            if index < 0 :
+            if index >= 0 :
                 # print("Connected")
                 return True
             else :
@@ -82,11 +83,15 @@ class App(tk.Tk) :
     
     def getStatus(self) :
         for i in range(len(self.renders)) :
-            status = self.ping(self.renders.loc[i,'Ipv4'])
-            self.renders.loc[i,'ON'] = status
+            if self.renders.loc[i,"Selected"] == '1' :
+                ip = self.renders.loc[i,'Ipv4']
+                status = self.ping(ip)
+                self.renders.loc[i,'ON'] = status
+                print("ping "+ip+" : "+"OK" if status else "X")
+        self.displayRenders(True)
         return
     
-    def displayRenders(self) :
+    def displayRenders(self,actu=False) :
         if self.first_time :
             self.on_frame = ttk.Frame(self,borderwidth=5,relief='solid')
             self.off_frame = ttk.Frame(self,borderwidth=5,relief='solid')
@@ -101,8 +106,7 @@ class App(tk.Tk) :
             for widget in self.off_frame.winfo_children() :
                 widget.destroy()
             
-            self.renders = self.getRenders()
-            self.getStatus()
+            if not actu : self.renders = self.getRenders()
             
         # on frame
         self.on_frame.rowconfigure(0, weight=1)
@@ -441,46 +445,57 @@ class App(tk.Tk) :
         else :
             # self.running = True
             # print(self.running)
-            
-            selected = []
-            for i in range(len(self.renders)) :
-                if self.renders.loc[i,"Selected"] == '1' :
-                    selected.append(self.renders.loc[i,"RenderName"])
-            
-            for renderName in selected :
-                # if not self.running :
-                #     break
+            if commandChoice == 'getStatus' :
+                self.getStatus()
+            else :
+                    
+                selected = []
+                for i in range(len(self.renders)) :
+                    if self.renders.loc[i,"Selected"] == '1' :
+                        selected.append(self.renders.loc[i,"RenderName"])
                 
-                if commandChoice != "config" :
-                    self.commandRender(renderName,commandChoice)
-                else :
-                    Config.Config(self,self.SAVEPATH,self.SAVEFILE,self.CONFIGFILE,self.STOPFILE,self.RESTARTFILE,renderName)
-        
+                for renderName in selected :
+                    # if not self.running :
+                    #     break
+                    
+                    if commandChoice != 'config' :
+                        self.commandRender(renderName,commandChoice)
+                    else :
+                        Config.Config(self,self.SAVEPATH,self.SAVEFILE,self.CONFIGFILE,self.STOPFILE,self.RESTARTFILE,renderName)
+            
             print("End of commands")
             # self.stopOperations()
+        self.all_on_check.set(0)
+        self.all_off_check.set(0)
+        self.selectAll("on")
         self.selectAll("off")
         return
     
     def getConfig(self) :
-        if 'config.csv' not in os.listdir(path=self.SAVEPATH) :
-            PopUP.PopUP("ERROR : échec de l'importation","Il n'y a pas de fichier config.csv à l'endroit prévu.\nDéplacez le fichier config.csv à importer dans :\n"+self.SAVEPATH+os.path.sep+"\nou vérifiez l'orthographe du fichier.")
-        else :
-            renders = self.getRenders().drop("Selected",axis=1).drop("ON",axis=1)
-            new_renders = pd.read_csv(self.SAVEPATH+os.path.sep+'config.csv')
-            concat_renders = pd.concat([renders,new_renders]).drop_duplicates(subset=['RenderName','Username','Ipv4'],keep='first')
-            concat_renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
-            concat_renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
-            self.getRenders()
-            self.displayRenders()
-            PopUP.PopUP("Succès","Le fichier config.csv a été importé avec succès.")
+        path = filedialog.askdirectory()
+        if path != "" : 
+            # path = os.environ['USERPROFILE']+os.path.sep+'Downloads'
+            if 'config.csv' not in os.listdir(path=path) :
+                PopUP.PopUP("ERROR : échec de l'importation","Il n'y a pas de fichier config.csv dans le dossier sélectionné :\n"+path)
+            else :
+                renders = self.getRenders().drop("Selected",axis=1).drop("ON",axis=1)
+                new_renders = pd.read_csv(path+os.path.sep+'config.csv')
+                concat_renders = pd.concat([renders,new_renders]).drop_duplicates(subset=['RenderName','Username','Ipv4'],keep='first')
+                concat_renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
+                concat_renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
+                self.getRenders()
+                self.displayRenders()
+                PopUP.PopUP("Succès","Le fichier config.csv a été importé avec succès.")
         return
     
     def saveConfig(self) :
-        renders = self.renders.drop("Selected",axis=1)
-        renders = self.renders.drop("ON",axis=1)
-        renders["Config"] = [0 for i in range(len(renders))]
-        renders.to_csv(self.SAVEPATH+os.path.sep+'config.csv',index=False)
-        PopUP.PopUP("Succès","La configuration a bien été exportée dans le fichier suivant :\n"+self.SAVEPATH+os.path.sep+'config.csv')
+        path = filedialog.askdirectory()
+        if path != "" : 
+            # path = os.environ['USERPROFILE']+os.path.sep+'Downloads'
+            renders = self.renders.drop("Selected",axis=1).drop("ON",axis=1)
+            renders["Config"] = [0 for i in range(len(renders))]
+            renders.to_csv(path+os.path.sep+'config.csv',index=False)
+            PopUP.PopUP("Succès","La configuration a bien été exportée dans le fichier suivant :\n"+path+os.path.sep+'config.csv')
         return
     
     
@@ -544,7 +559,7 @@ class App(tk.Tk) :
         self.green = ImageTk.PhotoImage(image_green.resize((20,10)))
         self.green.height=10
         self.green.width=10
-        self.status_button = ttk.Button(self, text="ACTUALISER",command=self.displayRenders)
+        self.status_button = ttk.Button(self, text="ACTUALISER",command=partial(self.commandAllRenders,'getStatus'))
         self.status_button.grid(column=2, columnspan=1, sticky=tk.EW, row=2, padx=2)
         
         # actions
