@@ -51,16 +51,22 @@ class App(tk.Tk) :
     
     def getRenders(self) :
         if self.SAVEFILE not in os.listdir(path=self.SAVEPATH) :
-            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[],'Config':[]},dtype=str)
+            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[],'Config':[],'ON':[]},dtype=str)
             renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
         else :
             renders = pd.read_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE)
         
-        renders['Selected'] = ['0' for i in range(len(renders))]
-        renders['ON'] = [False for i in range(len(renders))]
+        renders['Selected'] = [False for i in range(len(renders))]
         self.select_number.set(0)
         self.select_text.set(f"Sélection : {self.select_number.get()}")
         return renders
+    
+    def saveRenders(self) :
+        renders = self.renders
+        renders.drop("Selected",axis=1)
+        renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
+        renders.to_csv(self.SAVEPATH+'\\'+self.SAVEFILE,index=False)
+        return
     
     def ping(self,ip) :
         # print("ping "+ip)
@@ -83,21 +89,21 @@ class App(tk.Tk) :
     
     def getStatus(self) :
         for i in range(len(self.renders)) :
-            if self.renders.loc[i,"Selected"] == '1' :
+            if self.renders.loc[i,"Selected"] :
                 ip = self.renders.loc[i,'Ipv4']
                 status = self.ping(ip)
-                self.renders.loc[i,'ON'] = status
+                self.renders.loc[i,'ON'] = 1 if status else 0
                 print("ping "+ip+" : "+"OK" if status else "X")
-        self.displayRenders(True)
+        self.saveRenders()
+        self.displayRenders()
         return
     
-    def displayRenders(self,actu=False) :
+    def displayRenders(self) :
         if self.first_time :
             self.on_frame = ttk.Frame(self,borderwidth=5,relief='solid')
             self.off_frame = ttk.Frame(self,borderwidth=5,relief='solid')
             self.on_frame.grid(column=0, columnspan=6, row=3, sticky=tk.N, padx=5)
             self.off_frame.grid(column=6, columnspan=5, row=3, sticky=tk.NW, padx=5)
-            
             self.first_time = False
         else :
             for widget in self.on_frame.winfo_children() :
@@ -106,7 +112,7 @@ class App(tk.Tk) :
             for widget in self.off_frame.winfo_children() :
                 widget.destroy()
             
-            if not actu : self.renders = self.getRenders()
+            self.renders = self.getRenders()
             
         # on frame
         self.on_frame.rowconfigure(0, weight=1)
@@ -124,19 +130,19 @@ class App(tk.Tk) :
         
         self.all_on_on_check = tk.IntVar()
         self.all_on_on_check.set(0)
-        all_on_on_button = ttk.Checkbutton(self.on_frame, text="Allumés", command=partial(self.selectAll,"on","on"), variable=self.all_on_on_check)
+        all_on_on_button = ttk.Checkbutton(self.on_frame, text="Allumés", command=lambda:[self.selectOnlyConfigON() if self.all_on_on_check.get() else self.deselectOnlyConfigON()], variable=self.all_on_on_check)
         all_on_on_button.grid(column=2, row=0, padx=3, sticky=tk.E)
         
         self.all_on_off_check = tk.IntVar()
         self.all_on_off_check.set(0)
-        all_on_off_button = ttk.Checkbutton(self.on_frame, text="Éteints", command=partial(self.selectAll,"on","off"), variable=self.all_on_off_check)
+        all_on_off_button = ttk.Checkbutton(self.on_frame, text="Éteints", command=lambda:[self.selectOnlyConfigOFF() if self.all_on_off_check.get() else self.deselectOnlyConfigOFF()], variable=self.all_on_off_check)
         all_on_off_button.grid(column=3, row=0, padx=3, sticky=tk.W)
         
         self.all_on_text = tk.StringVar()
         self.all_on_text.set("Tous")
         self.all_on_check = tk.IntVar()
         self.all_on_check.set(0)
-        all_on_button = ttk.Checkbutton(self.on_frame, textvariable=self.all_on_text, command=partial(self.selectAll,"on"), variable=self.all_on_check)
+        all_on_button = ttk.Checkbutton(self.on_frame, textvariable=self.all_on_text, command=lambda:[self.selectAllConfig() if self.all_on_check.get() else self.deselectAllConfig()], variable=self.all_on_check)
         all_on_button.grid(column=4, row=0, padx=3)
         
     
@@ -157,18 +163,18 @@ class App(tk.Tk) :
         
         self.all_off_on_check = tk.IntVar()
         self.all_off_on_check.set(0)
-        all_off_on_button = ttk.Checkbutton(self.off_frame, text="Allumés", command=partial(self.selectAll,"off","on"), variable=self.all_off_on_check)
+        all_off_on_button = ttk.Checkbutton(self.off_frame, text="Allumés", command=lambda:[self.selectOnlyUnconfigON() if self.all_off_on_check.get() else self.deselectOnlyUnconfigON()], variable=self.all_off_on_check)
         all_off_on_button.grid(column=1, row=0, padx=3, sticky=tk.E)
         
         self.all_off_off_check = tk.IntVar()
         self.all_off_off_check.set(0)
-        all_off_off_button = ttk.Checkbutton(self.off_frame, text="Éteints", command=partial(self.selectAll,"off","off"), variable=self.all_off_off_check)
+        all_off_off_button = ttk.Checkbutton(self.off_frame, text="Éteints", command=lambda:[self.selectOnlyUnconfigOFF() if self.all_off_off_check.get() else self.deselectOnlyUnconfigOFF()], variable=self.all_off_off_check)
         all_off_off_button.grid(column=2, row=0, padx=3, sticky=tk.W)
         self.all_off_text = tk.StringVar()
         self.all_off_text.set("Tous")
         self.all_off_check = tk.IntVar()
         self.all_off_check.set(0)
-        all_off_button = ttk.Checkbutton(self.off_frame, textvariable=self.all_off_text, command=partial(self.selectAll,"off"), variable=self.all_off_check)
+        all_off_button = ttk.Checkbutton(self.off_frame, textvariable=self.all_off_text, command=lambda:[self.selectAllUnconfig() if self.all_off_check.get() else self.deselectAllUnconfig()], variable=self.all_off_check)
         all_off_button.grid(column=3, row=0, padx=3)
         
         # display buttons
@@ -178,7 +184,7 @@ class App(tk.Tk) :
         for i in range(len(self.renders)) :
             self.select_variables[i].set(0)
             
-            if self.renders.loc[i,"ON"] :
+            if self.renders.loc[i,"ON"] == 1 :
                 color = self.green
             else :
                 color = self.red
@@ -195,107 +201,158 @@ class App(tk.Tk) :
                 i_off += 1
         return
     
-    def selectAll(self,mode,status=None) :
-        if status is None :
-            if mode == "on" :
-                if self.all_on_check.get() : # All from configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 1 :
-                            self.selectOne(i,'1')
-                    self.all_on_text.set("Aucun")
-                else : # None from configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 1 :
-                            self.selectOne(i,'0')
-                    self.all_on_text.set("Tous ")
-                self.all_on_on_check.set(0)
-                self.all_on_off_check.set(0)
-            else :
-                if self.all_off_check.get() : # All from not configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 0 :
-                            self.selectOne(i,'1')
-                    self.all_off_text.set("Aucun")
-                else : # None from not configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 0 :
-                            self.selectOne(i,'0')
-                    self.all_off_text.set("Tous ")
-                self.all_off_on_check.set(0)
-                self.all_off_off_check.set(0)
-        elif status == "on" :
-            if mode == "on" : 
-                if self.all_on_on_check.get() : # Select only connected from configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 1 :
-                            if self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'1')
-                            else :
-                                self.selectOne(i,'0')
-                else : # Unselect only connected from configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 1 :
-                            if self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'0')
-                self.all_on_off_check.set(0)
-            else :
-                if self.all_off_on_check.get() : # Select only connected from not configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 0 :
-                            if self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'1')
-                            else :
-                                self.selectOne(i,'0')
-                else : # Unselect only connected from not configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 0 :
-                            if self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'0')
-                self.all_off_off_check.set(0)
-        else :
-            if mode == "on" :
-                if self.all_on_off_check.get() : # Select only not connected from configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 1 :
-                            if not self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'1')
-                            else :
-                                self.selectOne(i,'0')
-                else : # Unselect only not connected from configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 1 :
-                            if not self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'0')
-                self.all_on_on_check.set(0)
-            else :
-                if self.all_off_off_check.get() : # Select only not connected from not configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 0 :
-                            if not self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'1')
-                            else :
-                                self.selectOne(i,'0')
-                else : # Unselect only not connected from not configured
-                    for i in range(len(self.renders)) :
-                        if self.renders.loc[i,"Config"] == 0 :
-                            if not self.renders.loc[i,"ON"] :
-                                self.selectOne(i,'0')
-                self.all_off_on_check.set(0)
-        return
     
     def selectOne(self,i,forced_value=None) :
-        if self.renders.loc[i,"Selected"] == '0':
-            if forced_value is None or forced_value == '1' :
-                self.renders.loc[i,"Selected"] = '1'
-                self.select_variables[i].set(1)
-                self.select_number.set(self.select_number.get()+1)
-        else :
-            if forced_value is None or forced_value == '0' :
-                self.renders.loc[i,"Selected"] = '0'
+        if self.renders.loc[i,"Selected"] :
+            if forced_value is not None and forced_value :
+                pass
+            else :
+                self.renders.loc[i,"Selected"] = False
                 self.select_variables[i].set(0)
                 self.select_number.set(self.select_number.get()-1)
+        else :
+            if forced_value is not None and (not forced_value) :
+                pass
+            else :
+                self.renders.loc[i,"Selected"] = True
+                self.select_variables[i].set(1)
+                self.select_number.set(self.select_number.get()+1)
         self.select_text.set(f"Sélection : {self.select_number.get()}")
         return
+    
+    def deselectAll(self) :
+        for i in range(len(self.renders)) :
+            self.selectOne(i,False)
+        return
+    
+    def selectAllConfig(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 1 :
+                self.selectOne(i,True)
+        self.all_on_check.set(1)
+        self.all_on_text.set("Aucun")
+        self.all_on_on_check.set(0)
+        self.all_on_off_check.set(0)
+        return
+    
+    def deselectAllConfig(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 1 :
+                self.selectOne(i,False)
+        self.all_on_check.set(0)
+        self.all_on_text.set("Tous")
+        self.all_on_on_check.set(0)
+        self.all_on_off_check.set(0)
+        return
+    
+    def selectAllUnconfig(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 0 :
+                self.selectOne(i,True)
+        self.all_off_check.set(1)
+        self.all_off_text.set("Aucun")
+        self.all_off_on_check.set(0)
+        self.all_off_off_check.set(0)
+        return
+    
+    def deselectAllUnconfig(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 0 :
+                self.selectOne(i,False)
+        self.all_off_check.set(0)
+        self.all_off_text.set("Tous")
+        self.all_off_on_check.set(0)
+        self.all_off_off_check.set(0)
+        return
+    
+    def selectOnlyConfigON(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 1 :
+                if self.renders.loc[i,"ON"] == 1 :
+                    self.selectOne(i,True)
+                else :
+                    self.selectOne(i,False)
+        self.all_on_on_check.set(1)
+        self.all_on_check.set(0)
+        self.all_on_text.set("Tous")
+        self.all_on_off_check.set(0)
+        return
+    
+    def deselectOnlyConfigON(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 1 and self.renders.loc[i,"ON"] == 1 :
+                self.selectOne(i,False)
+        self.all_on_on_check.set(0)
+        self.all_on_check.set(0)
+        self.all_on_text.set("Tous")
+        return
+    
+    def selectOnlyUnconfigON(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 0 :
+                if self.renders.loc[i,"ON"] == 1 :
+                    self.selectOne(i,True)
+                else :
+                    self.selectOne(i,False)
+        self.all_off_on_check.set(1)
+        self.all_off_check.set(0)
+        self.all_off_text.set("Tous")
+        self.all_off_off_check.set(0)
+        return
+    
+    def deselectOnlyUnconfigON(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 0 and self.renders.loc[i,"ON"] == 1 :
+                self.selectOne(i,False)
+        self.all_off_on_check.set(0)
+        self.all_off_check.set(0)
+        self.all_off_text.set("Tous")
+        return
+    
+    def selectOnlyConfigOFF(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 1 :
+                if self.renders.loc[i,"ON"] == 0 :
+                    self.selectOne(i,True)
+                else :
+                    self.selectOne(i,False)
+        self.all_on_off_check.set(1)
+        self.all_on_check.set(0)
+        self.all_on_text.set("Tous")
+        self.all_on_on_check.set(0)
+        return
+    
+    def deselectOnlyConfigOFF(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 1 and self.renders.loc[i,"ON"] == 0 :
+                self.selectOne(i,False)
+        self.all_on_off_check.set(0)
+        self.all_on_check.set(0)
+        self.all_on_text.set("Tous")
+        return
+    
+    def selectOnlyUnconfigOFF(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 0 :
+                if self.renders.loc[i,"ON"] == 0 :
+                    self.selectOne(i,True)
+                else :
+                    self.selectOne(i,False)
+        self.all_off_off_check.set(1)
+        self.all_off_check.set(0)
+        self.all_off_text.set("Tous")
+        self.all_off_on_check.set(0)
+        return
+    
+    def deselectOnlyUnconfigOFF(self) :
+        for i in range(len(self.renders)) :
+            if self.renders.loc[i,"Config"] == 0 and self.renders.loc[i,"ON"] == 0 :
+                self.selectOne(i,False)
+        self.all_off_off_check.set(0)
+        self.all_off_check.set(0)
+        self.all_off_text.set("Tous")
+        return
+    
     
     def createBat(self,renderName) :
         render = {}
@@ -364,7 +421,6 @@ class App(tk.Tk) :
         
         else :
             PopUP.PopUP("Erreur",renderName+" est déjà configuré.")
-            
         return
     
     def stopOperations(self) :
@@ -465,10 +521,7 @@ class App(tk.Tk) :
             
             print("End of commands")
             # self.stopOperations()
-        self.all_on_check.set(0)
-        self.all_off_check.set(0)
-        self.selectAll("on")
-        self.selectAll("off")
+        self.deselectAll()
         return
     
     def getConfig(self) :

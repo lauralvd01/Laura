@@ -17,7 +17,7 @@ class NewRender(tk.Toplevel):
     
     def getRenders(self) :
         if self.SAVEFILE not in os.listdir(path=self.SAVEPATH) :
-            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[], 'Config':[]},dtype=str)
+            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[], 'Config':[],'ON':[]},dtype=str)
             renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
         else :
             renders = pd.read_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE)
@@ -31,7 +31,7 @@ class NewRender(tk.Toplevel):
         if "Render "+renderName not in [self.renders.loc[i,"RenderName"] for i in range(len(self.renders))] and renderName != "" and username != "" and ip != "" and ip != "render-" :
             #Adding to the csv
             N = len(self.renders.index)
-            self.renders.loc[N] = ["Render "+renderName,username,ip,0]
+            self.renders.loc[N] = ["Render "+renderName,username,ip,0,0]
             self.renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
             self.renders.to_csv(self.SAVEPATH+'\\'+self.SAVEFILE,index=False)
             
