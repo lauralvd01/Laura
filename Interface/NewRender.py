@@ -17,7 +17,7 @@ class NewRender(tk.Toplevel):
     
     def getRenders(self) :
         if self.SAVEFILE not in os.listdir(path=self.SAVEPATH) :
-            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[], 'Config':[],'ON':[]},dtype=str)
+            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[],'Config':[],'ON':[]},dtype=str)
             renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
         else :
             renders = pd.read_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE)

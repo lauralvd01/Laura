@@ -29,6 +29,7 @@ class Config(tk.Toplevel):
             renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
         else :
             renders = pd.read_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE)
+        self.renders = renders
         return renders
     
     def displayRender(self) :
@@ -192,7 +193,7 @@ class Config(tk.Toplevel):
                 
                 path = self.SAVEPATH + os.path.sep + self.render['RenderName']
                 command = f"{path}_config.bat"
-                print(command)
+                print("\n\n",command)
                 try :
                     batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     result = batch.stdout.readlines()
@@ -201,16 +202,25 @@ class Config(tk.Toplevel):
                         PopUP.PopUP("Erreur "+self.render['RenderName'],"ERREUR : " + error,"#FF0000")
                     else :
                         PopUP.PopUP("Succès",self.render['RenderName'] + " :\n" + joinList(result))
+                        
+                        self.render['Config'] = 1
                 except :
                     PopUP.PopUP("Erreur "+self.render['RenderName'],self.render['RenderName']+" mal configuré !","#FF0000")
-                
-                self.render['Config'] == 1
-                self.renders.loc[self.renders.index[self.renders["RenderName"] == self.render['RenderName']][0],"Config"] = 1
-                self.root.saveRenders(self.renders)
-                self.root.displayRenders()
-                self.destroy()
             else :
                 PopUP.PopUP("Impossible",self.render['RenderName']+" n'est pas allumé ! Impossible de le configurer.")
+        
+        if self.render['Config'] == 1 :
+            index = self.renders.index[self.renders["RenderName"] == self.render['RenderName']][0]
+            self.renders.loc[index,"Config"] = 1
+            self.root.saveRenders(self.renders)
+            self.root.displayRenders()
+            self.destroy()
+        return
+    
+    def actuRenders(self) :
+        self.renders = self.getRenders()
+        i = self.renders.index[self.renders["RenderName"] == self.render['RenderName']][0]
+        self.render = {'RenderName': self.renders.loc[i,"RenderName"],'Username': self.renders.loc[i,"Username"],'Ipv4': self.renders.loc[i,"Ipv4"], 'Config': self.renders.loc[i,"Config"], 'ON': self.renders.loc[i,"ON"]}
         return
     
     def __init__(self,root,savepath,savefile,configfile,stopfile,restartfile,renderName):
@@ -278,12 +288,12 @@ class Config(tk.Toplevel):
         
 
         # save button
-        add_button = ttk.Button(self, text="Modifier", command=self.modifyRender)
+        add_button = ttk.Button(self, text="Modifier", command=lambda:[self.actuRenders(), self.modifyRender()])
         add_button.grid(column=2, row=8, sticky=tk.E, **paddings)
         self.bind('<Return>',lambda event : self.modifyRender())
         
         # config button
-        config_button = ttk.Button(self, text="Configurer", command=self.config)
+        config_button = ttk.Button(self, text="Configurer", command=lambda:[self.actuRenders(), self.config()])
         config_button.grid(column=3, row=8, **paddings)
         
         # quit button
@@ -297,12 +307,12 @@ class Config(tk.Toplevel):
         self.style.configure('Heading.TLabel', font=('Helvetica', 13, 'bold'))
 
 
-if __name__ == "__main__":
-   import App
-   path = os.getcwd() + os.path.sep + '_internal' + os.path.sep + 'Files'
-   savefile = 'saveRenders.csv'
-   configfile = 'connexion_par_cle.bat'
-   stopfile = 'arret_par_cle.bat'
-   restartfile = 'restart_par_cle.bat'
-   config = Config(App.App(),path,savefile,configfile,stopfile,restartfile,"Render 1")
-   config.mainloop()
+# if __name__ == "__main__":
+#    import App
+#    path = os.getcwd() + os.path.sep + '_internal' + os.path.sep + 'Files'
+#    savefile = 'saveRenders.csv'
+#    configfile = 'connexion_par_cle.bat'
+#    stopfile = 'arret_par_cle.bat'
+#    restartfile = 'restart_par_cle.bat'
+#    config = Config(App.App(),path,savefile,configfile,stopfile,restartfile,"Render 1")
+#    config.mainloop()

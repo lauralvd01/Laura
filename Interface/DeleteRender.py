@@ -84,10 +84,10 @@ class DeleteRender(tk.Toplevel):
         return
     
     def deleteRender(self, renderName) :
-        renders_to_delete = self.renders.index[self.renders.loc[:,'RenderName'] == renderName]
+        renders_to_keep = self.renders.index[self.renders.loc[:,'RenderName'] != renderName]
         
-        if len(renders_to_delete) > 0 :
-            self.renders = self.renders.drop(renders_to_delete,axis=0,inplace=True)
+        if len(renders_to_keep) < len(self.renders) :
+            self.renders = self.renders.iloc[renders_to_keep]
             self.root.saveRenders(self.renders)
             
             # remove bat files

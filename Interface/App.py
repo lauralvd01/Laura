@@ -38,16 +38,15 @@ class App(tk.Tk) :
         else :
             renders = pd.read_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE)
         
-        renders['Selected'] = [False for i in range(len(renders))]
+        renders.loc[:,('Selected')] = [False for i in range(len(renders))]
         self.select_number.set(0)
         self.select_text.set(f"Sélection : {self.select_number.get()}")
         return renders
     
     def saveRenders(self,renders) :
-        renders = renders[['RenderName','Username','Ipv4','Config','ON']]
+        renders = renders.loc[:,('RenderName','Username','Ipv4','Config','ON')].copy()
         renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
         renders.to_csv(self.SAVEPATH+'\\'+self.SAVEFILE,index=False)
-        print(renders)
         return
     
     def ping(self,ip) :
@@ -332,8 +331,8 @@ class App(tk.Tk) :
  
  
     def runProcess(self,renderName,command) :
-        index = self.renders.index[self.renders['RenderName'] == renderName]
-        if self.renders.loc[index[0],'ON'] == 1 :
+        index = self.renders.index[self.renders['RenderName'] == renderName][0]
+        if self.renders.loc[index,'ON'] == 1 :
             try :
                 batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 result = batch.stdout.readlines()
@@ -391,9 +390,9 @@ class App(tk.Tk) :
                 PopUP.PopUP("ERROR : échec de l'importation","Il n'y a pas de fichier config.csv dans le dossier sélectionné :\n"+path)
             else :
                 renders = self.getRenders()
-                renders = renders.drop("Selected",axis=1)
+                renders = renders.loc[:,('RenderName','Username','Ipv4','Config','ON')].copy()
                 new_renders = pd.read_csv(path+os.path.sep+'config.csv')
-                new_renders['ON'] = [0 for i in range(len(new_renders))]
+                new_renders.loc[:,'ON'] = [0 for i in range(len(new_renders))]
                 concat_renders = pd.concat([renders,new_renders])
                 concat_renders = concat_renders.drop_duplicates(subset=['RenderName','Username','Ipv4'],keep='first')
                 concat_renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
@@ -407,10 +406,12 @@ class App(tk.Tk) :
         path = filedialog.askdirectory()
         if path != "" : 
             # path = os.environ['USERPROFILE']+os.path.sep+'Downloads'
+            if 'config.csv' in os.listdir(path) :
+                os.remove(path+os.path.sep+'config.csv')
             self.saveRenders(self.renders)
             renders = self.getRenders()
-            renders = renders.drop("Selected",axis=1).drop("ON",axis=1).drop("Config",axis=1)
-            renders["Config"] = [0 for i in range(len(renders))]
+            renders = renders.loc[:,('RenderName','Username','Ipv4','Config')].copy()
+            renders.loc[:,"Config"] = [0 for i in range(len(renders))]
             renders.to_csv(path+os.path.sep+'config.csv',index=False)
             PopUP.PopUP("Succès","La configuration a bien été exportée dans le fichier suivant :\n"+path+os.path.sep+'config.csv')
         return

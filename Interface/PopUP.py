@@ -5,7 +5,7 @@ class PopUP(tk.Tk):
     def __init__(self, title, msg, color="#000000"):
         super().__init__()
 
-        self.geometry('800x600')
+        self.geometry('1100x360')
         self.resizable(1, 1)
         self.title(title)
 
