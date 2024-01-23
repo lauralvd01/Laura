@@ -338,11 +338,11 @@ class App(tk.Tk) :
                 result = batch.stdout.readlines()
                 if result == []:
                     error = joinList(batch.stderr.readlines())
-                    PopUP.PopUP("Erreur "+self.render['RenderName'],"ERREUR : " + error,"#FF0000")
+                    PopUP.PopUP("Erreur "+renderName,"ERREUR : " + error,"#FF0000")
                 else :
-                    PopUP.PopUP("Succès",self.render['RenderName'] + " :\n" + joinList(result))
+                    PopUP.PopUP("Succès",renderName + " :\n" + joinList(result))
             except :
-                PopUP.PopUP("Erreur "+self.render['RenderName'],self.render['RenderName']+" mal configuré !","#FF0000")
+                PopUP.PopUP("Erreur "+renderName,renderName+" mal configuré !","#FF0000")
         else :
             PopUP.PopUP("Erreur "+renderName,"Le render "+renderName+" est considéré éteint. Allumer le render puis actualiser les statuts.","#FF0000")
         return
