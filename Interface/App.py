@@ -5,7 +5,6 @@ import pandas as pd
 import subprocess
 from PIL import ImageTk, Image
 from tkinter import filedialog
-# from threading import Thread,Event
 
 from math import ceil
 from functools import partial
@@ -14,23 +13,6 @@ import NewRender
 import DeleteRender
 import Config
 import PopUP
-
-# class Controller(object) :
-#     def __init__(self,nbThreads) -> None:
-#         self.nbThreads = nbThreads
-#         self.threads = [None for i in range(nbThreads)]
-#         self.stop = Event()
-#         print(self.threads)
-
-# import sys
-# cmd = [sys.executable or "python", "-u", "-c", """
-# import itertools, time
-# for i in itertools.count():
-#     print(i)
-#     time.sleep(0.5)
-# """]
-
-
 
 
 def joinList(liste) :
@@ -61,30 +43,25 @@ class App(tk.Tk) :
         self.select_text.set(f"Sélection : {self.select_number.get()}")
         return renders
     
-    def saveRenders(self) :
-        renders = self.renders
-        renders.drop("Selected",axis=1)
+    def saveRenders(self,renders) :
+        renders = renders[['RenderName','Username','Ipv4','Config','ON']]
         renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
         renders.to_csv(self.SAVEPATH+'\\'+self.SAVEFILE,index=False)
+        print(renders)
         return
     
     def ping(self,ip) :
-        # print("ping "+ip)
         try :
             batch = subprocess.check_output('ping '+ip)
             lines = batch.split(b"\n")
-            # print(lines[2])
             index = lines[2].find(b"octets")
             
             if index >= 0 :
-                # print("Connected")
                 return True
             else :
-                # print("Not connected")
                 return False
         except :
             pass
-            # print("ping impossible pour "+ip)
         return False
     
     def getStatus(self) :
@@ -93,8 +70,8 @@ class App(tk.Tk) :
                 ip = self.renders.loc[i,'Ipv4']
                 status = self.ping(ip)
                 self.renders.loc[i,'ON'] = 1 if status else 0
-                print("ping "+ip+" : "+"OK" if status else "X")
-        self.saveRenders()
+                print("ping "+ip+" : ","OK" if status else "pas de réponse")
+        self.saveRenders(self.renders)
         self.displayRenders()
         return
     
@@ -352,120 +329,11 @@ class App(tk.Tk) :
         self.all_off_check.set(0)
         self.all_off_text.set("Tous")
         return
-    
-    
-    def createBat(self,renderName) :
-        render = {}
-        for i in range(len(self.renders)) :
-            if self.renders.loc[i,"RenderName"] == renderName :
-                render = {'RenderName': self.renders.loc[i,"RenderName"],'Username': self.renders.loc[i,"Username"],'Ipv4': self.renders.loc[i,"Ipv4"], 'Config': self.renders.loc[i,"Config"]}
-        
-        if len(render) > 0 and render['Config'] == 0 :
-            
-            #Creating config.bat file
-            source_config_file = open(self.SAVEPATH+os.path.sep+self.CONFIGFILE,'r')
-            i = 0
-            new = ""
-            for line in source_config_file :
-                if i == 12 :
-                    new_line = "set name=" + render['Username'] +'\n'
-                elif i == 13 :
-                    new_line = "set ip=" + render['Ipv4'] +'\n'
-                else :
-                    new_line = line
-                new += new_line
-                i += 1
-            source_config_file.close()
-            
-            config_file = open(self.SAVEPATH+os.path.sep+renderName+'_config.bat','w')
-            config_file.write(new)
-            config_file.close()
-            
-            #Creating stop.bat file
-            source_stop_file = open(self.SAVEPATH+os.path.sep+self.STOPFILE,'r')
-            i = 0
-            new = ""
-            for line in source_stop_file :
-                if i == 6 :
-                    new_line = "set name=" + render['Username'] +'\n'
-                elif i == 7 :
-                    new_line = "set ip=" + render['Ipv4'] +'\n'
-                else :
-                    new_line = line
-                new += new_line
-                i += 1
-            source_stop_file.close()
-            
-            stop_file = open(self.SAVEPATH+os.path.sep+renderName+'_stop.bat','w')
-            stop_file.write(new)
-            stop_file.close()
-            
-            #Creating restart.bat file
-            source_restart_file = open(self.SAVEPATH+os.path.sep+self.RESTARTFILE,'r')
-            i = 0
-            new = ""
-            for line in source_restart_file :
-                if i == 6 :
-                    new_line = "set name=" + render['Username'] +'\n'
-                elif i == 7 :
-                    new_line = "set ip=" + render['Ipv4'] +'\n'
-                else :
-                    new_line = line
-                new += new_line
-                i += 1
-            source_restart_file.close()
-            
-            restart_file = open(self.SAVEPATH+os.path.sep+renderName+'_restart.bat','w')
-            restart_file.write(new)
-            restart_file.close()
-        
-        else :
-            PopUP.PopUP("Erreur",renderName+" est déjà configuré.")
-        return
-    
-    def stopOperations(self) :
-        # if self.running :
-        #     self.running = False
-        #     print("STOP")
-        # else :
-        #     PopUP.PopUP("Erreur","Aucune opération en cours.")
-        return
-    
-    def runProcessO(self,renderName,command) :
-    #     command = cmd
-        
-    #     index = self.renders.index[self.renders['RenderName'] == renderName]
-    #     if self.renders.loc[index[0],'ON'] :
-    #         try :
-    #             error = ""
-    #             batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                
-    #             while batch.poll() == None :
-    #                 print("Trying "+command+" ...")
-    #                 if not self.running :
-    #                     batch.terminate()
-    #                     print("Stop "+command)
-    #                     PopUP.PopUP("Arrêt de l'opération",command+" : processus arrêté avec succès.")
-                
-    #             # if self.running :
-    #             if True :
-    #                 result = batch.stdout.readlines()
-    #                 if result == []:
-    #                     error = joinList(batch.stderr.readlines())
-    #                     PopUP.PopUP("Erreur "+renderName,"ERREUR : " + error,"#FF0000")
-    #                 else :
-    #                     PopUP.PopUP("Succès",renderName + " :\n" + joinList(result))
-    #             else :
-    #                 PopUP.PopUP("Arrêt des opérations","Arrêt de l'opération sur le "+renderName)
-    #         except :
-    #             PopUP.PopUP("Erreur "+renderName,"Une erreur s'est produite lors de l'envoi de la commande","#FF0000")
-    #     else :
-    #         PopUP.PopUP("Erreur "+renderName,"Le render "+renderName+" est considéré éteint. Allumer le render puis actualiser les statuts.","#FF0000")
-        return
-        
+ 
+ 
     def runProcess(self,renderName,command) :
         index = self.renders.index[self.renders['RenderName'] == renderName]
-        if self.renders.loc[index[0],'ON'] :
+        if self.renders.loc[index[0],'ON'] == 1 :
             try :
                 batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 result = batch.stdout.readlines()
@@ -482,46 +350,37 @@ class App(tk.Tk) :
     
     def commandRender(self, renderName,commandChoice) :
         path = self.SAVEPATH + os.path.sep + renderName
-        
-        if commandChoice == 'config' :
-            # creation of bat files
-            self.createBat(renderName)
-            
+           
         command = f"{path}_{commandChoice}.bat"
         print(command)
         if os.path.isfile(command)  :
             self.runProcess(renderName,command)
         else :
             PopUP.PopUP("Erreur "+renderName,renderName+" pas encore configuré !","#FF0000")
+            print("Fichier inexistant")
         return
     
     def commandAllRenders(self,commandChoice) :
         if self.select_number.get() + self.select_number.get() == 0 :
             PopUP.PopUP("Erreur","Aucun Render sélectionné")
         else :
-            # self.running = True
-            # print(self.running)
+            
             if commandChoice == 'getStatus' :
                 self.getStatus()
-            else :
-                    
+            else :  
                 selected = []
                 for i in range(len(self.renders)) :
-                    if self.renders.loc[i,"Selected"] == '1' :
+                    if self.renders.loc[i,"Selected"] :
                         selected.append(self.renders.loc[i,"RenderName"])
                 
                 for renderName in selected :
-                    # if not self.running :
-                    #     break
-                    
-                    if commandChoice != 'config' :
-                        self.commandRender(renderName,commandChoice)
-                    else :
+                    if commandChoice == 'config' :
                         Config.Config(self,self.SAVEPATH,self.SAVEFILE,self.CONFIGFILE,self.STOPFILE,self.RESTARTFILE,renderName)
-            
+                    else :
+                        self.commandRender(renderName,commandChoice)
+                        self.getStatus()
+            self.deselectAll()
             print("End of commands")
-            # self.stopOperations()
-        self.deselectAll()
         return
     
     def getConfig(self) :
@@ -531,12 +390,15 @@ class App(tk.Tk) :
             if 'config.csv' not in os.listdir(path=path) :
                 PopUP.PopUP("ERROR : échec de l'importation","Il n'y a pas de fichier config.csv dans le dossier sélectionné :\n"+path)
             else :
-                renders = self.getRenders().drop("Selected",axis=1).drop("ON",axis=1)
+                renders = self.getRenders()
+                renders = renders.drop("Selected",axis=1)
                 new_renders = pd.read_csv(path+os.path.sep+'config.csv')
-                concat_renders = pd.concat([renders,new_renders]).drop_duplicates(subset=['RenderName','Username','Ipv4'],keep='first')
+                new_renders['ON'] = [0 for i in range(len(new_renders))]
+                concat_renders = pd.concat([renders,new_renders])
+                concat_renders = concat_renders.drop_duplicates(subset=['RenderName','Username','Ipv4'],keep='first')
                 concat_renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
                 concat_renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
-                self.getRenders()
+                
                 self.displayRenders()
                 PopUP.PopUP("Succès","Le fichier config.csv a été importé avec succès.")
         return
@@ -545,7 +407,9 @@ class App(tk.Tk) :
         path = filedialog.askdirectory()
         if path != "" : 
             # path = os.environ['USERPROFILE']+os.path.sep+'Downloads'
-            renders = self.renders.drop("Selected",axis=1).drop("ON",axis=1)
+            self.saveRenders(self.renders)
+            renders = self.getRenders()
+            renders = renders.drop("Selected",axis=1).drop("ON",axis=1).drop("Config",axis=1)
             renders["Config"] = [0 for i in range(len(renders))]
             renders.to_csv(path+os.path.sep+'config.csv',index=False)
             PopUP.PopUP("Succès","La configuration a bien été exportée dans le fichier suivant :\n"+path+os.path.sep+'config.csv')
@@ -598,11 +462,6 @@ class App(tk.Tk) :
         selection_label = ttk.Label(self, textvariable=self.select_text)
         selection_label.grid(column=1, columnspan=3, row=2, sticky=tk.W, padx=5)
         
-        # stop operations
-        # self.running = False
-        # self.stop_op_button = ttk.Button(self, text="STOP",command=self.stopOperations)
-        # self.stop_op_button.grid(column=2, columnspan=1, sticky=tk.W, row=3, padx=2)
-        
         # status
         image_red=Image.open('_internal\Files\\red.png')
         self.red = ImageTk.PhotoImage(image_red.resize((20,10)))
@@ -628,13 +487,9 @@ class App(tk.Tk) :
         self.displayRenders()
         
         def quit() :
-            # self.running = False
+            self.renders['ON'] = [0 for i in range(len(self.renders))]
+            self.saveRenders(self.renders)
             self.destroy()
-        
-        
-        # # stop button
-        # stop_button = ttk.Button(self, text="Annuler les opérations", command=self.stopOperations)
-        # stop_button.grid(column=1, columnspan=2, row=5, sticky=tk.EW)
         
         # quit button
         quit_button = ttk.Button(self, text="Quitter", command=quit)
@@ -650,4 +505,3 @@ class App(tk.Tk) :
 if __name__ == "__main__":
     appRoot = App()
     appRoot.mainloop()
-    #control = Controller(2)

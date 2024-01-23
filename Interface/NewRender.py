@@ -32,8 +32,7 @@ class NewRender(tk.Toplevel):
             #Adding to the csv
             N = len(self.renders.index)
             self.renders.loc[N] = ["Render "+renderName,username,ip,0,0]
-            self.renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
-            self.renders.to_csv(self.SAVEPATH+'\\'+self.SAVEFILE,index=False)
+            self.root.saveRenders(self.renders)
             
             #Update renders showed in the app
             self.root.displayRenders()

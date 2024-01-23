@@ -13,12 +13,12 @@ class DeleteRender(tk.Toplevel):
     
     def getRenders(self) :
         if self.SAVEFILE not in os.listdir(path=self.SAVEPATH) :
-            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[], 'Config':[]},dtype=str)
+            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[], 'Config':[],'ON':[]},dtype=str)
             renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
         else :
             renders = pd.read_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE)
             
-        renders['Selected'] = ['0' for i in range(len(renders))]
+        renders['Selected'] = [False for i in range(len(renders))]
         self.select_number.set(0)
         self.select_text.set(f"Supprimer : {self.select_number.get()}")
         return renders
@@ -57,36 +57,38 @@ class DeleteRender(tk.Toplevel):
     def selectAll(self) :
         if self.all_check.get() :
             for i in range(len(self.renders)) :
-                self.selectOne(i,'1')
+                self.selectOne(i,True)
             self.all_text.set("Aucun")
         else :
             for i in range(len(self.renders)) :
-                self.selectOne(i,'0')
+                self.selectOne(i,False)
             self.all_text.set("Tous")
         return
     
     def selectOne(self,i,forced_value=None) :
-        if self.renders.loc[i,"Selected"] == '0':
-            if forced_value is None or forced_value == '1' :
-                self.renders.loc[i,"Selected"] = '1'
-                self.select_variables[i].set(1)
-                self.select_number.set(self.select_number.get()+1)
-                self.select_text.set(f"Supprimer : {self.select_number.get()}")
-        else :
-            if forced_value is None or forced_value == '0' :
-                self.renders.loc[i,"Selected"] = '0'
+        if self.renders.loc[i,"Selected"] :
+            if forced_value is not None and forced_value :
+                pass
+            else :
+                self.renders.loc[i,"Selected"] = False
                 self.select_variables[i].set(0)
                 self.select_number.set(self.select_number.get()-1)
-                self.select_text.set(f"Supprimer : {self.select_number.get()}")
+        else :
+            if forced_value is not None and (not forced_value) :
+                pass
+            else :
+                self.renders.loc[i,"Selected"] = True
+                self.select_variables[i].set(1)
+                self.select_number.set(self.select_number.get()+1)
+        self.select_text.set(f"Supprimer : {self.select_number.get()}")
         return
     
     def deleteRender(self, renderName) :
         renders_to_delete = self.renders.index[self.renders.loc[:,'RenderName'] == renderName]
         
         if len(renders_to_delete) > 0 :
-            self.renders.drop(renders_to_delete,axis=0,inplace=True)
-            copy = self.renders.drop(columns="Selected")
-            copy.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
+            self.renders = self.renders.drop(renders_to_delete,axis=0,inplace=True)
+            self.root.saveRenders(self.renders)
             
             # remove bat files
             try :
@@ -111,7 +113,7 @@ class DeleteRender(tk.Toplevel):
         else :
             selected = []
             for i in range(len(self.renders)) :
-                if self.renders.loc[i,"Selected"] == '1' :
+                if self.renders.loc[i,"Selected"] :
                     selected.append(self.renders.loc[i,"RenderName"])
             for renderName in selected :
                 self.deleteRender(renderName)

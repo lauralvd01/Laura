@@ -1,5 +1,6 @@
 ('D:\\LEVRAUDLaura\\Seb\\Interface\\build\\App\\PYZ-00.pyz',
- [('Config', 'D:\\LEVRAUDLaura\\Seb\\Interface\\Config.py', 'PYMODULE'),
+ [('App', 'D:\\LEVRAUDLaura\\Seb\\Interface\\App.py', 'PYMODULE'),
+  ('Config', 'D:\\LEVRAUDLaura\\Seb\\Interface\\Config.py', 'PYMODULE'),
   ('DeleteRender',
    'D:\\LEVRAUDLaura\\Seb\\Interface\\DeleteRender.py',
    'PYMODULE'),

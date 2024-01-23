@@ -9,3 +9,4 @@
 /test_connexion_par_cle.bat
 /test_ping_192.168.0.50.txt
 /test_restart_par_cle.bat
+*.bat

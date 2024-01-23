@@ -3,6 +3,7 @@ from tkinter import ttk
 import os
 import pandas as pd
 import subprocess
+from PIL import ImageTk, Image
 
 import PopUP
 
@@ -24,24 +25,27 @@ class Config(tk.Toplevel):
     
     def getRenders(self) :
         if self.SAVEFILE not in os.listdir(path=self.SAVEPATH) :
-            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[],'Config':[]},dtype=str)
+            renders = pd.DataFrame(data={'RenderName':[],'Username':[],'Ipv4':[],'Config':[],'ON':[]},dtype=str)
             renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
         else :
             renders = pd.read_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE)
         return renders
     
-    def displayRender(self, renderName) :
+    def displayRender(self) :
         if not self.firstime :
             self.renderName_label.grid_forget()
             self.user_label.grid_forget()
             self.ip_label.grid_forget()
         
-        self.render = {}
-        for i in range(len(self.renders)) :
-            if self.renders.loc[i,"RenderName"] == renderName :
-                self.render = {'Index': i, 'RenderName': self.renders.loc[i,"RenderName"],'Username': self.renders.loc[i,"Username"],'Ipv4': self.renders.loc[i,"Ipv4"], 'Config': self.renders.loc[i,"Config"]}
-
-        assert(len(self.render) > 0)
+        if self.render['ON'] == 1 :
+            self.color = self.green
+            self.status.set("Allumé")
+        else :
+            self.color = self.red
+            self.status.set("Éteint")
+        self.status_label = ttk.Label(self, textvariable=self.status, image=self.color, compound='left')
+        self.status_label.image = self.color
+        self.status_label.grid(column=0, row=0, rowspan=3, sticky = tk.W, padx=5, pady=5)
         self.renderName_label = ttk.Label(self, text=self.render['RenderName'])
         self.renderName_label.grid(column=3, row=0, sticky=tk.E)
         self.user_label = ttk.Label(self, text=self.render['Username'])
@@ -60,29 +64,34 @@ class Config(tk.Toplevel):
         modif = True
         
         if  not (num == "" and username == "" and ip == "") :
+            new_render = self.render.copy()
             
             if modif and num != "" :
-                if "Render "+num not in [self.renders.loc[i,"RenderName"] for i in range(len(self.renders))] or "Render "+num == self.render['RenderName']:
-                    self.renders.loc[self.render['Index'],"RenderName"] = "Render "+num
+                if "Render "+num not in [self.renders.loc[i,"RenderName"] for i in range(len(self.renders))] or "Render "+num == self.render['RenderName'] :
+                    new_render['RenderName'] = "Render "+num
                 else :
                     modif = False
                     PopUP.PopUP("Erreur","Render déjà existant avec ce n°")
             
             if modif and username != "" :
-                self.renders.loc[self.render['Index'],"Username"] = username
+                new_render["Username"] = username
             
             if modif and ip != "" :
-                self.renders.loc[self.render['Index'],"Ipv4"] = ip
+                new_render["Ipv4"] = ip
             
             if modif :
-                self.renders.loc[self.render['Index'],"Config"] = 0
-                
-                self.renders.sort_values(by="RenderName",axis=0,inplace=True,key=getRenderIndex)
-                self.renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
+                new_render["Config"] = 0
+                ind = self.renders.index[self.renders["RenderName"] == self.render['RenderName']][0]
+                self.renders.loc[ind,"RenderName"] = new_render['RenderName']
+                self.renders.loc[ind,"Username"] = new_render['Username']
+                self.renders.loc[ind,"Ipv4"] = new_render['Ipv4']
+                self.renders.loc[ind,"Config"] = new_render['Config']
+                self.root.saveRenders(self.renders)
                 
                 #Update renders showed in the app
                 self.renders = self.getRenders()
-                self.displayRender(self.render['RenderName'] if num == "" else "Render "+num)
+                self.render = new_render.copy()
+                self.displayRender()
                 self.root.displayRenders()
                 
                 #Clear entries
@@ -164,29 +173,44 @@ class Config(tk.Toplevel):
         restart_file.close()
         return
     
+    def getStatus(self) :
+        status = self.root.ping(self.render['Ipv4'])
+        self.render['ON'] = 1 if status else 0
+        self.renders.loc[self.renders.index[self.renders["RenderName"] == self.render['RenderName']][0],'ON'] = self.render['ON']
+        self.displayRender()
+        self.root.saveRenders(self.renders)
+        self.root.displayRenders()
+        return
+    
     def config(self) :
         if self.render['Config'] == 1 :
             PopUP.PopUP("Erreur","Render déjà configuré")
         else :
-            self.createBat()
-            
-            path = self.SAVEPATH + os.path.sep + self.render['RenderName']
-            command = f"{path}_config.bat"
-            try :
-                batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                result = batch.stdout.readlines()
-                if result == []:
-                    error = joinList(batch.stderr.readlines())
-                    PopUP.PopUP("Erreur "+self.render['RenderName'],"ERREUR : " + error,"#FF0000")
-                else :
-                    PopUP.PopUP("Succès",self.render['RenderName'] + " :\n" + joinList(result))
-            except :
-                PopUP.PopUP("Erreur "+self.render['RenderName'],self.render['RenderName']+" mal configuré !","#FF0000")
-            
-            self.render['Config'] == 1
-            self.renders.loc[self.render['Index'],"Config"] = 1
-            self.renders.to_csv(self.SAVEPATH+os.path.sep+self.SAVEFILE,index=False)
-            self.root.displayRenders()
+            self.getStatus()
+            if self.render['ON'] == 1 :
+                self.createBat()
+                
+                path = self.SAVEPATH + os.path.sep + self.render['RenderName']
+                command = f"{path}_config.bat"
+                print(command)
+                try :
+                    batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    result = batch.stdout.readlines()
+                    if result == []:
+                        error = joinList(batch.stderr.readlines())
+                        PopUP.PopUP("Erreur "+self.render['RenderName'],"ERREUR : " + error,"#FF0000")
+                    else :
+                        PopUP.PopUP("Succès",self.render['RenderName'] + " :\n" + joinList(result))
+                except :
+                    PopUP.PopUP("Erreur "+self.render['RenderName'],self.render['RenderName']+" mal configuré !","#FF0000")
+                
+                self.render['Config'] == 1
+                self.renders.loc[self.renders.index[self.renders["RenderName"] == self.render['RenderName']][0],"Config"] = 1
+                self.root.saveRenders(self.renders)
+                self.root.displayRenders()
+                self.destroy()
+            else :
+                PopUP.PopUP("Impossible",self.render['RenderName']+" n'est pas allumé ! Impossible de le configurer.")
         return
     
     def __init__(self,root,savepath,savefile,configfile,stopfile,restartfile,renderName):
@@ -199,8 +223,10 @@ class Config(tk.Toplevel):
         self.STOPFILE = stopfile
         self.RESTARTFILE = restartfile
         self.renders = self.getRenders()
-
-        self.geometry('580x270')
+        i = self.renders.index[self.renders["RenderName"] == renderName][0]
+        self.render = {'RenderName': self.renders.loc[i,"RenderName"],'Username': self.renders.loc[i,"Username"],'Ipv4': self.renders.loc[i,"Ipv4"], 'Config': self.renders.loc[i,"Config"], 'ON': self.renders.loc[i,"ON"]}
+        
+        self.geometry('580x210')
         self.resizable(1, 1)
         self.title('Modifier les informations du Render')
 
@@ -208,9 +234,19 @@ class Config(tk.Toplevel):
         paddings = {'padx': 5, 'pady': 5}
         entry_font = {'font': ('Helvetica', 11)}
         
+        image_red=Image.open('_internal\Files\\red.png')
+        self.red = ImageTk.PhotoImage(image_red.resize((20,10)))
+        self.red.height=10
+        self.red.width=10
+        image_green=Image.open('_internal\Files\\green.png')
+        self.green = ImageTk.PhotoImage(image_green.resize((20,10)))
+        self.green.height=10
+        self.green.width=10
+        self.status = tk.StringVar()
+        
         # render informations
         self.firstime = True
-        self.displayRender(renderName)
+        self.displayRender()
         
         modify_label = ttk.Label(self, text="Modifier :",style='Heading.TLabel')
         modify_label.grid(column=0, columnspan=2, row=3, sticky=tk.W, padx=10)
@@ -244,6 +280,7 @@ class Config(tk.Toplevel):
         # save button
         add_button = ttk.Button(self, text="Modifier", command=self.modifyRender)
         add_button.grid(column=2, row=8, sticky=tk.E, **paddings)
+        self.bind('<Return>',lambda event : self.modifyRender())
         
         # config button
         config_button = ttk.Button(self, text="Configurer", command=self.config)
@@ -260,12 +297,12 @@ class Config(tk.Toplevel):
         self.style.configure('Heading.TLabel', font=('Helvetica', 13, 'bold'))
 
 
-#if __name__ == "__main__":
-#    import AppRoot
-#    path = os.getcwd() + os.path.sep + 'Interface' + os.path.sep + 'Files'
-#    savefile = 'saveRenders.csv'
-#    configfile = 'connexion_par_cle.bat'
-#    stopfile = 'arret_par_cle.bat'
-#    restartfile = 'restart_par_cle.bat'
-#    config = Config(AppRoot.AppRoot(),path,savefile,configfile,stopfile,restartfile,"Render 1")
-#    config.mainloop()
+if __name__ == "__main__":
+   import App
+   path = os.getcwd() + os.path.sep + '_internal' + os.path.sep + 'Files'
+   savefile = 'saveRenders.csv'
+   configfile = 'connexion_par_cle.bat'
+   stopfile = 'arret_par_cle.bat'
+   restartfile = 'restart_par_cle.bat'
+   config = Config(App.App(),path,savefile,configfile,stopfile,restartfile,"Render 1")
+   config.mainloop()
