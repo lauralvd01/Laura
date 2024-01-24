@@ -77,7 +77,7 @@
  [],
  False,
  False,
- 1706024113,
+ 1706095370,
  [('run.exe',
    'd:\\LEVRAUDLaura\\Seb\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
    'EXECUTABLE')],

@@ -18,6 +18,7 @@ import PopUP
 def joinList(liste) :
     joinStr = ""
     for line in liste :
+        print(type(line))
         joinStr += line.decode()
     return joinStr
 
@@ -333,16 +334,16 @@ class App(tk.Tk) :
     def runProcess(self,renderName,command) :
         index = self.renders.index[self.renders['RenderName'] == renderName][0]
         if self.renders.loc[index,'ON'] == 1 :
-            try :
-                batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                result = batch.stdout.readlines()
-                if result == []:
+            if self.ping(self.renders.loc[index,'Ipv4']) :
+                try :
+                    batch = subprocess.Popen([command], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    result = batch.stdout.readlines()
+                    PopUP.PopUP("Succès",renderName + " : commande effectuée avec succès\n" + joinList(result))
+                except :
                     error = joinList(batch.stderr.readlines())
                     PopUP.PopUP("Erreur "+renderName,"ERREUR : " + error,"#FF0000")
-                else :
-                    PopUP.PopUP("Succès",renderName + " :\n" + joinList(result))
-            except :
-                PopUP.PopUP("Erreur "+renderName,renderName+" mal configuré !","#FF0000")
+            else :
+                PopUP.PopUP("Erreur "+renderName,"ERREUR : le render est éteint, ou ne répond pas au ping.","#FF0000")
         else :
             PopUP.PopUP("Erreur "+renderName,"Le render "+renderName+" est considéré éteint. Allumer le render puis actualiser les statuts.","#FF0000")
         return

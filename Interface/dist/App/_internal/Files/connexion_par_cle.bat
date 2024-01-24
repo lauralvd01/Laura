@@ -13,7 +13,8 @@
 set name=backburner
 set ip=192.168.0.50
 
-scp "%userprofile%\.ssh\id_rsa.pub" "%name%@%ip%:C:\Users\%name%\.ssh\authorized_keys"
+scp "%userprofile%\.ssh\id_rsa.pub" "%name%@%ip%:C:\Users\%name%\.ssh\key"
+ssh %name%@%ip% "type C:\Users\%name%\.ssh\key >> C:\Users\%name%\.ssh\authorized_keys & del C:\Users\%name%\.ssh\key"
 
 @rem pause
 
