@@ -64,5 +64,3 @@ pyinstaller $path_to_the_Interface_folder$\App.spec
 - Retrieve the __App__ folder containing the __App.exe__ executable, as well as the __internal__ folder containing the libraries and the __Files__ folder where the necessary / related application files are and will be stored.
 
 If the modifications made to the code do not require the addition of libraries (no _import_ added) or other files (no dependencies added in _App.spec_), then it is not necessary to redistribute the entire __App__ folder : only the executable needs to be replaced.
-
-### Travailler le code - Working on the code
